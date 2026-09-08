@@ -1,8 +1,14 @@
 name: Build Release Artifact
 
 on:
+  push:
+    tags:
+      - 'v*'
   release:
     types: [published]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -14,7 +20,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.4'
           extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, readline, ldap, msgpack, igbinary, redis, swoole, memcached, pcov, xdebug
 
       - name: Setup Node
@@ -55,7 +61,8 @@ jobs:
           mv meshbeacon.tar.gz meshbeacon/
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.release.tag_name || github.ref_name }}
           files: meshbeacon.tar.gz
+

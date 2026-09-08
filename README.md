@@ -20,21 +20,62 @@
 </p>
 
 <p align="center">
+  <img src="https://img.shields.io/badge/PHP-8.4-777BB4?style=flat&logo=php&logoColor=white" alt="PHP 8.4">
+  <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=flat&logo=laravel&logoColor=white" alt="Laravel 12">
+  <img src="https://img.shields.io/badge/Livewire-3.x-FB70A9?style=flat&logo=livewire&logoColor=white" alt="Livewire 3">
+  <img src="https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?style=flat&logo=tailwind-css&logoColor=white" alt="Tailwind CSS">
+  <img src="https://img.shields.io/badge/Docker-Multi--Arch-2496ED?style=flat&logo=docker&logoColor=white" alt="Docker Multi-Arch">
+  <img src="https://img.shields.io/badge/MQTT-Mosquitto-3C5280?style=flat&logo=eclipse-mosquitto&logoColor=white" alt="MQTT Mosquitto">
+  <img src="https://img.shields.io/badge/LoRa-ClusterDuck_Protocol-FCC624?style=flat" alt="LoRa CDP">
+  <img src="https://img.shields.io/badge/TAK-CoT_Bridge-00599C?style=flat" alt="TAK CoT Bridge">
+</p>
+
+<p align="center">
+  <a href="#origins-built-from-the-2014-kelantan-flood-bah-kuning">Origins</a> |
+  <a href="#disaster-operations--use-cases">Use Cases</a> |
   <a href="#choose-a-deployment">Deployments</a> |
   <a href="#quick-install">Install</a> |
   <a href="#pre-built-docker-images">Docker Images</a> |
   <a href="#how-it-works">How it works</a> |
   <a href="#features">Features</a> |
+  <a href="#payload-decoding">Payload Decoding</a> |
   <a href="#operator-workflows">Workflows</a> |
   <a href="#offline-maps">Offline Maps</a> |
   <a href="#tak-bridges">TAK Bridges</a> |
   <a href="#duckcrypto-mesh-security">DuckCrypto</a> |
   <a href="#configuration">Configuration</a> |
+  <a href="#development">Development</a> |
   <a href="#licensing">License</a> |
   <a href="#contributing">Contributors</a>
 </p>
 
 > MeshBeacon connects ClusterDuck Protocol (MamaDuck, PapaDuck) LoRa deployments to a high-performance Laravel operations console. It stores events locally, turns SOS alerts into actionable incidents, renders tactical maps offline, and synchronizes upstream to central servers when connectivity is restored.
+
+---
+
+## Origins: Built from the 2014 Kelantan Flood (*Bah Kuning*)
+
+In late December 2014, the state of Kelantan in Peninsular Malaysia suffered an unprecedented disaster known locally as **Bah Kuning** (The Yellow Flood). Heavy northeast monsoon rains caused rivers across the state to swell simultaneously, carrying tons of yellow mud and silt down from interior catchments.
+
+Floodwaters reached heights over 10 meters in districts like Manek Urai, Kuala Krai, Gua Musang, and Kota Bharu, completely submerging two-story homes, schools, and relief centers. More than 200,000 residents were displaced. The flood inundated electrical substations and drowned cellular base stations. Fiber lines snapped and landlines died, plunging entire districts into a total telecommunications blackout for days.
+
+MeshBeacon was developed from the lessons of the 2014 Kelantan floods. Commercial cellular networks fail when major natural disasters strike. MeshBeacon delivers independent, low-power LoRa mesh connectivity coupled with an offline-first operations console. It runs locally without internet, renders maps from local MBTiles storage, and ensures continuous operational coordination when all commercial infrastructure collapses.
+
+---
+
+## Disaster operations & use cases
+
+MeshBeacon addresses critical emergency scenarios across disaster response, remote search operations, and tactical relief:
+
+| Use Case | Operational Scenario | How MeshBeacon Solves It |
+| --- | --- | --- |
+| **Monsoon & Flash Floods** | Telecommunication towers lose power or are submerged; road access is cut off. | Battery-powered MamaDuck and PapaDuck nodes deploy on elevated ground. Rescue boats and relief centers transmit SOS and water-level telemetry directly to the local MeshBeacon console without internet access. |
+| **Search & Rescue (SAR)** | Dense tropical rainforests, mountain ranges, or maritime zones with zero cellular coverage. | Search teams carry portable LoRa beacons. MeshBeacon tracks team coordinates, displays paths on offline topographic maps, and streams Cursor-on-Target (CoT) XML over UDP to ATAK/WinTAK tablets. |
+| **Emergency Operations Centers (PKOB / EOC)** | District disaster management centers coordinate multi-agency relief teams (APM, JBPM, Police, NGOs). | The `/kiosk` wallboard provides automated, live situation monitors on command room displays. Operators assign responders, record triage notes, and track duck battery and RSSI health. |
+| **Remote River Basin Early Warning** | Isolated upstream villages require early warning of flash floods. | Solar-powered sensor ducks monitor river rise rates. When thresholds are breached, the local rules engine triggers emergency broadcasts across the mesh and alerts Telegram responder channels. |
+| **Hybrid Store-and-Forward Operations** | Field command posts operate during outages but need to report records to state or national headquarters. | Field nodes log incidents in local SQLite storage. When satellite or cellular uplinks reconnect, background workers automatically push records upstream via idempotent `POST /api/ingest`. |
+
+Read the complete scenario guide in [docs/USE_CASES.md](docs/USE_CASES.md).
 
 ---
 
@@ -52,7 +93,7 @@
 
 ### Linux with Docker
 
-The automated installer configures your environment, creates `.env`, generates `APP_KEY`, creates the initial administrator, pulls the pre-built multi-arch Docker image from GHCR, and launches the entire stack.
+The automated installer configures your environment, creates `.env`, generates `APP_KEY`, provisions the initial administrator, pulls the pre-built multi-arch Docker image from GHCR, and starts the container stack.
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/MeshBeacon/meshbeacon/main/install.sh | sh
@@ -68,7 +109,7 @@ curl -fsSL https://raw.githubusercontent.com/MeshBeacon/meshbeacon/main/install.
   sh
 ```
 
-The default installation path is `$HOME/meshbeacon`. The installer generates and prints a secure administrator password upon initial run. To update an existing deployment, set `MESHBEACON_UPDATE=1`.
+The default installation path is `$HOME/meshbeacon`. The installer generates and displays a secure administrator password upon initial run. To update an existing deployment, set `MESHBEACON_UPDATE=1`.
 
 ### FreeBSD without Docker
 
@@ -76,11 +117,11 @@ The default installation path is `$HOME/meshbeacon`. The installer generates and
 curl -fsSL https://raw.githubusercontent.com/MeshBeacon/meshbeacon/main/install.sh | sudo sh
 ```
 
-The FreeBSD path installs PHP, Composer, Node, Mosquitto, and necessary extensions natively using `pkg`, managing processes via FreeBSD `daemon`. Place the service behind a production reverse proxy for public network exposure.
+The FreeBSD path installs PHP 8.4+, Composer, Node.js, Mosquitto, and required extensions natively using `pkg`, managing background services through FreeBSD `daemon`. Place the service behind a production reverse proxy (Nginx, Caddy, or HAProxy) for public network exposure.
 
 ### First login
 
-The installer provisions the initial account using `MESHBEACON_ADMIN_EMAIL` and prints the generated password. Open the URL shown in your terminal, sign in, and configure your profile from **Account Settings**.
+The installer provisions the initial account using `MESHBEACON_ADMIN_EMAIL` and displays the generated password. Open the URL shown in your terminal (default `http://localhost:8080`), sign in, and update your credentials from **Account Settings**.
 
 ---
 
@@ -119,11 +160,13 @@ sequenceDiagram
 
 Field nodes preserve all incident and telemetry data locally. When upstream connectivity resumes, background queue workers dispatch idempotent synchronization requests to the central cluster.
 
----
-
 ### Tuning healthcheck cadence for constrained field hardware
 
-Each `app`, `mqtt-worker`, `queue-worker`, and `scheduler` healthcheck runs `php artisan observability:check`, which boots a short-lived PHP CLI process on every poll. The defaults (`MESHBEACON_HC_INTERVAL=10s`, `MESHBEACON_WORKER_HC_INTERVAL=15s`) suit an always-on server, but on constrained field hardware (a Raspberry Pi, for example) polling that often across several containers adds up in CPU and memory churn for little practical benefit. Set both variables in `.env` to a larger interval, such as `30s`-`60s`, to reduce that overhead - the underlying heartbeat TTLs (`OBSERVABILITY_MQTT_HEARTBEAT_TTL` 90s, `OBSERVABILITY_WORKER_HEARTBEAT_TTL` 45s, by default) already tolerate slower detection than the default poll cadence provides.
+Each `app`, `mqtt-worker`, `queue-worker`, and `scheduler` container healthcheck runs `php artisan observability:check`, which executes a short PHP CLI process on every poll. The defaults (`MESHBEACON_HC_INTERVAL=10s`, `MESHBEACON_WORKER_HC_INTERVAL=15s`) suit an always-on server.
+
+On constrained field hardware (such as a Raspberry Pi), polling frequently across several containers increases CPU and memory load. Set both variables in `.env` to a larger interval, such as `30s` to `60s`, to reduce overhead. The underlying heartbeat TTLs (`OBSERVABILITY_MQTT_HEARTBEAT_TTL=90s`, `OBSERVABILITY_WORKER_HEARTBEAT_TTL=45s`) already tolerate this slower detection cadence.
+
+---
 
 ## Pre-built Docker images
 
@@ -147,18 +190,34 @@ MESHBEACON_GHCR_IMAGE=ghcr.io/meshbeacon/meshbeacon:latest
 
 - **Offline-First Telemetry Ingestion**: Ingests real-time binary and text packets across LoRa mesh networks via MQTT (`hub/event` and `hub/command`).
 - **Tactical Incident Management**: SOS auto-triage, responder assignment, triage notes, lifecycle status tracking, and mesh retransmissions.
-- **DuckCrypto End-to-End Encryption**: Authenticated, tamper-proof mesh communication using X25519 ECDH + ChaCha20-Poly1305 AEAD + HKDF-SHA256, Trust-On-First-Use (TOFU) public key exchange, sealed uplinks, and mesh group broadcast authentication.
-- **Dual TAK (Team Awareness Kit) Integration**: Live Cursor-on-Target (CoT) broadcast bridge for ATAK/iTAK/WinTAK (`docs/TAK_BRIDGE.md`) and encrypted OpenTAKServer plugin bridge (`docs/OPENTAK_BRIDGE.md`) with live audit logs (`/tak/logs`).
+- **DuckCrypto End-to-End Encryption**: Authenticated, tamper-proof mesh communication using X25519 ECDH + ChaCha20-Poly1305 AEAD + HKDF-SHA256, Trust-On-First-Use (TOFU) public key discovery, sealed uplinks (`0x07`), and encrypted downlinks (`0x08`).
+- **Mesh Group Broadcast Signing**: Dashboard emergency broadcasts are signed with a pre-shared 256-bit symmetric key (`DUCK_MESH_GROUP_KEY`) to prevent spoofing across the mesh.
+- **Protobuf & Legacy Payload Decoding**: Built-in wire-format parser (`DuckPayloadDecoder`) for GPS, SOS, Health, Status, and operator command read receipts (`dcmd` / `MSG_READ:TEXT:...`).
+- **Dual TAK (Team Awareness Kit) Integration**: Live Cursor-on-Target (CoT) broadcast bridge for ATAK/iTAK/WinTAK ([docs/TAK_BRIDGE.md](docs/TAK_BRIDGE.md)) and encrypted OpenTAKServer plugin bridge ([docs/OPENTAK_BRIDGE.md](docs/OPENTAK_BRIDGE.md)) with live audit logs (`/tak/logs`).
 - **High-Performance Offline MBTiles Map Engine**: Upload regional raster `.mbtiles` maps directly via UI (up to 500MB). Features sub-millisecond tile delivery via a lightweight PHP bypass (`public/tiles.php`), smart `maxNativeZoom` upscaling, and a global offline/online base layer toggle.
 - **EOC Kiosk Wallboard (`/kiosk`)**: Fullscreen, auto-updating emergency operations center display designed for command post status monitors and TV arrays.
 - **Dashboard Telemetry Trends**: Synchronized battery and RSSI signal-strength history charts with local browser timezone support, filterable by duck and time range (24h / 7d / 30d).
-- **Rules Engine**: Automated trigger and action evaluation on incoming mesh events and thresholds.
+- **Rules Engine**: Automated trigger and action evaluation on incoming mesh events, signal levels, and battery thresholds.
 - **Automated Telegram Dispatch**: Instant SOS dispatch to Telegram responder channels with one-click responder account linking and live webhook logs (`/telegram/logs`).
-- **Bilingual Interface**: Native multi-language support (English & Bahasa Melayu `ms`) with instant switching and user preference persistence.
-- **System Health & Observability**: Production-grade liveness/readiness probes (`/health/live`, `/health/ready`), Prometheus metric endpoints (`/metrics`), and an interactive System Health dashboard (`/system-health`).
+- **Bilingual Interface**: Multi-language support (English and Bahasa Melayu `ms`) with instant switching and user preference persistence.
+- **System Health & Observability**: Production liveness/readiness probes (`/health/live`, `/health/ready`), Prometheus metrics endpoint (`/metrics`), and an interactive System Health dashboard (`/system-health`).
 - **Comprehensive Reporting**: Export period-based and incident-specific audit reports in CSV and print-optimized PDF formats.
 - **Progressive Web App (PWA)**: Offline fallback support and mobile/desktop installability.
-- **Security & Access Control**: Two-Factor Authentication (2FA via Fortify), Role-Based Access Control (`admin`, `responder`, `viewer`), and read-only instance locks.
+- **Security & Access Control**: Two-Factor Authentication (2FA via Fortify), Role-Based Access Control (`admin`, `responder`, `viewer`), and read-only instance locks (`DASHBOARD_READONLY=true`).
+
+---
+
+## Payload decoding
+
+MeshBeacon includes a native wire-format parser ([`DuckPayloadDecoder`](app/Services/DuckPayloadDecoder.php)) that decodes binary protobuf payloads recovered from encrypted uplinks into canonical text formats:
+
+| Topic / Payload | Wire Type | Decoded Fields | Output Example |
+| --- | --- | --- | --- |
+| **`gps`** | `duckcdp.GpsPayload` | Fix state, source, lat, lon, altitude, speed, heading, sats seen, RSSI, battery | `GPS,SRC:DEVICE,LAT:3.1390030,LNG:101.6868550,ALT:45,SPD:12.4,HDG:180,SATS:8,RSSI:-75,BATT:92` |
+| **`alert`** | `duckcdp.SosPayload` | SOS origin, coordinates, altitude, speed, heading, sats, GPS source, RSSI, battery | `SOS,SRC:DEVICE,LAT:3.1390030,LNG:101.6868550,ALT:45,SPD:0.0,HDG:0,SATS:7,GPS:DEVICE,RSSI:-68,BATT:88` |
+| **`health`** | `duckcdp.HealthPayload` | Boot counter, free memory | `C:142\|FM:184320` |
+| **`status`** | `duckcdp.StatusReport` | Embedded SOS alert or field text message with optional GPS | `MSG,SRC:DEVICE,TEXT:Team Alpha at checkpoint 2` |
+| **`dcmd`** | `duckcdp.OpText` | Operator message acknowledgment and read receipts | `MSG_READ:TEXT:Evacuate immediately` or `ALERT_ACK` |
 
 ---
 
@@ -166,14 +225,14 @@ MESHBEACON_GHCR_IMAGE=ghcr.io/meshbeacon/meshbeacon:latest
 
 | Workflow | Key Capabilities & Actions |
 | --- | --- |
-| **Incident Response** | Acknowledge SOS signals, assign field responders, add timestamped operational notes, change status, resolve, and retransmit mesh packets. |
+| **Incident Response** | Acknowledge SOS signals, assign field responders, add timestamped operational notes, update incident status, resolve, and retransmit mesh packets. |
 | **Tactical & EOC Kiosk** | Launch fullscreen `/kiosk` wallboard for command post monitoring with live maps, alert feeds, and responder queues. |
 | **Spatial & Offline Maps** | Upload `.mbtiles` packages in Settings, toggle between OpenStreetMap and offline raster layers, and track device GPS history. |
-| **Analytics & Telemetry** | Inspect battery and signal-strength trends per duck, filterable by time range, from the Dashboard's Trends section. |
+| **Analytics & Telemetry** | Inspect battery and signal-strength trends per duck, filterable by time range, from the Dashboard Trends section. |
 | **Mesh Operations** | View device health metrics, dispatch remote GPS polls, adjust polling intervals, and broadcast text messages across the mesh. |
 | **Reporting & Export** | Generate CSV archives and print-ready incident dossiers for after-action reviews (AAR) and agency compliance. |
 | **Log Auditing** | Live monitoring of TAK CoT multicasts (`/tak/logs`) and Telegram alert dispatches (`/telegram/logs`). |
-| **Responder Administration**| Manage users, configure roles (Admin/Responder/Viewer), enforce 2FA, and link Telegram alert accounts. |
+| **Responder Administration** | Manage users, configure roles (Admin, Responder, Viewer), enforce 2FA, and link Telegram alert accounts. |
 
 ---
 
@@ -182,9 +241,9 @@ MESHBEACON_GHCR_IMAGE=ghcr.io/meshbeacon/meshbeacon:latest
 MeshBeacon enables zero-connectivity mapping using standard raster MBTiles:
 
 1. **Generate MBTiles**: Create regional raster map tiles using QGIS, TileMill, or MOBAC (see [docs/OFFLINE_MAPS.md](docs/OFFLINE_MAPS.md)).
-2. **Upload**: Navigate to **Settings > Offline Map** in the MeshBeacon web dashboard and upload your `.mbtiles` file (supports uploads up to 500MB).
-3. **Seamless Rendering**: The system automatically serves tiles via the high-speed `/tiles/{z}/{x}/{y}.png` endpoint directly via [`public/tiles.php`](public/tiles.php).
-4. **Smart Zoom**: If operators zoom beyond the pre-rendered zoom level of the MBTiles file, MeshBeacon natively upscales existing tiles to avoid gray placeholder tiles.
+2. **Upload**: Navigate to **Settings > Offline Map** (`/settings/map`) in the MeshBeacon web dashboard and upload your `.mbtiles` file (supports uploads up to 500MB).
+3. **Tile Delivery**: The system serves tiles via `/tiles/{z}/{x}/{y}.png` directly through [`public/tiles.php`](public/tiles.php) without bootstrapping the full framework.
+4. **Smart Zoom**: If operators zoom beyond the pre-rendered zoom level of the MBTiles file, MeshBeacon scales existing tiles to avoid blank tiles.
 
 ---
 
@@ -211,18 +270,18 @@ flowchart TD
     end
 ```
 
-> **Important**: Do not run the standalone TAK CoT bridge and the OpenTAKServer Encrypted Plugin bridge against the same OpenTAKServer instance simultaneously. They use different device identification schemes (`DeviceID` vs `meshbeacon-<duck_id>`), which would create duplicate markers on OTS maps.
+> **Important**: Do not run the standalone TAK CoT bridge and the OpenTAKServer Encrypted Plugin bridge against the same OpenTAKServer instance simultaneously. They use different device identification schemes (`DeviceID` vs `meshbeacon-<duck_id>`), which creates duplicate markers on OTS maps.
 
-### 1. Standalone TAK CoT Bridge (`docs/TAK_BRIDGE.md`)
-* Broadcasts GPS coordinates and emergency beacons as standard Cursor-on-Target (CoT) XML over UDP multicast (`239.2.3.1:4242`) or unicast.
-* Ideal for generic ATAK, iTAK, WinTAK devices and standard TAK Server instances.
-* Read the setup guide in [docs/TAK_BRIDGE.md](docs/TAK_BRIDGE.md).
+### 1. Standalone TAK CoT Bridge ([docs/TAK_BRIDGE.md](docs/TAK_BRIDGE.md))
+- Broadcasts GPS coordinates and emergency beacons as standard Cursor-on-Target (CoT) XML over UDP multicast (`239.2.3.1:4242`) or unicast.
+- Built for generic ATAK, iTAK, WinTAK devices and standard TAK Server instances.
+- Read the setup guide in [docs/TAK_BRIDGE.md](docs/TAK_BRIDGE.md).
 
-### 2. OpenTAKServer Encrypted Plugin Bridge (`docs/OPENTAK_BRIDGE.md`)
-* Runs as a native plugin inside OpenTAKServer (`opentakserver-meshbeacon-plugin`).
-* Features end-to-end encrypted MQTT communication with MeshBeacon using dedicated static X25519 keypairs.
-* Supports bi-directional GeoChat messaging, emergency alerts, SOS cancel events, and remote mesh command execution.
-* Read the setup guide in [docs/OPENTAK_BRIDGE.md](docs/OPENTAK_BRIDGE.md).
+### 2. OpenTAKServer Encrypted Plugin Bridge ([docs/OPENTAK_BRIDGE.md](docs/OPENTAK_BRIDGE.md))
+- Runs as a native plugin inside OpenTAKServer (`opentakserver-meshbeacon-plugin`).
+- Features end-to-end encrypted MQTT communication with MeshBeacon using static X25519 keypairs.
+- Supports bi-directional GeoChat messaging, emergency alerts, SOS cancel events, and remote mesh command execution.
+- Read the setup guide in [docs/OPENTAK_BRIDGE.md](docs/OPENTAK_BRIDGE.md).
 
 ---
 
@@ -230,11 +289,11 @@ flowchart TD
 
 MeshBeacon incorporates cryptographic primitives to secure communications with ClusterDuck Protocol mesh nodes:
 
-* **Key Generation**: Run `php artisan duck:keygen` to generate a dedicated static X25519 keypair for OpenDMS.
-* **Sealed Uplinks (`0x07`)**: Ducks encrypt field telemetry and SOS alerts using ephemeral X25519 keys and OpenDMS's static public key (`DUCK_CRYPTO_PUBLIC_KEY`). Payloads are decrypted and authenticated on arrival via ChaCha20-Poly1305.
-* **Trust-On-First-Use (TOFU)**: OpenDMS securely discovers and tracks Duck public keys in the `duck_identities` table upon first verified contact.
-* **Encrypted Downlinks (`0x08`)**: Downlink commands to known Ducks are automatically encrypted using their recorded public key.
-* **Mesh Group Broadcast Authentication**: Broadcast emergency alerts from the dashboard are signed using a pre-shared 256-bit group key (`DUCK_MESH_GROUP_KEY`) to prevent unauthorized spoofing across the mesh.
+- **Key Generation**: Run `php artisan duck:keygen` to generate a static X25519 keypair for MeshBeacon.
+- **Sealed Uplinks (`0x07`)**: Ducks encrypt field telemetry and SOS alerts using ephemeral X25519 keys and MeshBeacon's static public key (`DUCK_CRYPTO_PUBLIC_KEY`). Payloads are decrypted and authenticated on arrival via ChaCha20-Poly1305.
+- **Trust-On-First-Use (TOFU)**: MeshBeacon securely discovers and stores Duck public keys in the `duck_identities` table upon first verified contact.
+- **Encrypted Downlinks (`0x08`)**: Downlink commands to known Ducks are encrypted using their recorded public key.
+- **Mesh Group Broadcast Authentication**: Broadcast emergency alerts from the dashboard are signed using a pre-shared 256-bit group key (`DUCK_MESH_GROUP_KEY`) to prevent unauthorized spoofing across the mesh.
 
 ---
 
@@ -243,12 +302,12 @@ MeshBeacon incorporates cryptographic primitives to secure communications with C
 | Service | Role |
 | --- | --- |
 | `webserver` | Nginx web server handling HTTP requests and static asset routing |
-| `app` | PHP-FPM Laravel 12 application core |
+| `app` | PHP-FPM Laravel application core |
 | `migrate` | Executes database migrations and provisions the initial admin account |
-| `permissions` | Fixes storage and database file permissions on startup |
+| `permissions` | Sets storage and database file permissions on startup |
 | `mqtt-server` | Eclipse Mosquitto MQTT broker |
 | `mqtt-worker` | Subscribes to `hub/event` and dispatches processing jobs |
-| `queue-worker` | Handles `sync` and `default` job queues |
+| `queue-worker` | Handles `sync` and `default` background job queues |
 | `scheduler` | Executes scheduled maintenance, GPS polling, and health checks |
 
 ---
@@ -277,6 +336,7 @@ Key settings from [.env.example](.env.example):
 | `DB_DATABASE` | SQLite path or remote database name | `/var/www/database/database.sqlite` |
 | `QUEUE_CONNECTION` | Queue driver | `database` |
 | `MQTT_HOST` / `MQTT_PORT` | Mosquitto broker host and port | `mqtt-server` / `1883` |
+| `MQTT_BIND_ADDRESS` / `MQTT_BIND_PORT` | Host bind address and port for MQTT broker | `0.0.0.0` / `1883` |
 | `CENTRAL_DMS_URL` | Central aggregation server URL | `https://central.example.org` |
 | `CENTRAL_DMS_TOKEN` | Shared hybrid synchronization token | Random 64-char token |
 | `DASHBOARD_READONLY` | Lock UI to read-only on central aggregators | `false` |
@@ -285,13 +345,15 @@ Key settings from [.env.example](.env.example):
 | `TELEGRAM_WEBHOOK_SECRET` | Secret token validating incoming webhooks | Random 32-char hex |
 | `MAP_OFFLINE_ENABLED` | Toggle offline MBTiles map engine | `true` |
 | `TAK_BRIDGE_ENABLED` | Toggle TAK Logs navigation link in UI | `false` |
-| `DUCK_CRYPTO_PRIVATE_KEY` | OpenDMS static X25519 private key (base64) | Generated via `duck:keygen` |
-| `DUCK_CRYPTO_PUBLIC_KEY` | OpenDMS static X25519 public key (hex, 64 chars) | Generated via `duck:keygen` |
+| `DUCK_CRYPTO_PRIVATE_KEY` | MeshBeacon static X25519 private key (base64) | Generated via `duck:keygen` |
+| `DUCK_CRYPTO_PUBLIC_KEY` | MeshBeacon static X25519 public key (hex, 64 chars) | Generated via `duck:keygen` |
 | `DUCK_MESH_GROUP_KEY` | Symmetric mesh group broadcast key (hex, 64 chars) | Pre-shared secret |
 | `OPENTAK_BRIDGE_ENABLED` | Toggle OpenTAKServer encrypted plugin bridge | `false` |
-| `OPENTAK_BRIDGE_PRIVATE_KEY`| Bridge static X25519 private key (base64) | Generated via `opentak:keygen` |
+| `OPENTAK_BRIDGE_PRIVATE_KEY` | Bridge static X25519 private key (base64) | Generated via `opentak:keygen` |
 | `OPENTAK_BRIDGE_PUBLIC_KEY` | Bridge static X25519 public key (hex, 64 chars) | Generated via `opentak:keygen` |
 | `OPENTAK_SERVER_PUBLIC_KEY` | OTS plugin static public key (hex, 64 chars) | Obtained from OTS plugin |
+| `OPENTAK_EVENT_TOPIC` | Outbound encrypted telemetry topic for OTS | `hub/opentak/event` |
+| `OPENTAK_COMMAND_TOPIC` | Inbound encrypted command topic from OTS | `hub/opentak/command` |
 
 ---
 
@@ -317,7 +379,7 @@ Key settings from [.env.example](.env.example):
 
 ## Telegram alerts
 
-1. Create a bot with [@BotFather](https://t.me/BotFather) and obtain the API token.
+1. Create a bot with [@BotFather](https://t.me/BotFather) and copy the API token.
 2. Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, and `TELEGRAM_WEBHOOK_SECRET` in `.env`.
 3. Set `APP_URL` to your public HTTPS address.
 4. Register the webhook:
@@ -347,7 +409,7 @@ npm run build
 Generate encryption keys:
 
 ```sh
-# Generate OpenDMS DuckCrypto keypair
+# Generate MeshBeacon DuckCrypto keypair
 php artisan duck:keygen
 
 # Generate OpenTAKServer bridge keypair
@@ -363,11 +425,12 @@ php artisan queue:work --queue=sync,default --tries=5 --timeout=0
 php artisan schedule:work
 ```
 
-Run test suite and style linters:
+Run test suite:
 
 ```sh
 composer run test
 php artisan test --filter=DuckCryptoServiceTest
+php artisan test --filter=DuckPayloadDecoderTest
 php artisan test --filter=MqttServiceTest
 php artisan test --filter=HybridSyncTest
 php artisan test --filter=DashboardReadonlyTest
@@ -384,7 +447,7 @@ php artisan test --filter=DashboardReadonlyTest
 | `app/Http/Controllers` | Web, API, healthcheck, and tile server controllers |
 | `app/Livewire` | Reactive Livewire Flux components and interactive log viewers |
 | `app/Models` | Eloquent models (telemetry, incidents, GPS, rules, logs, identities) |
-| `app/Services` | Core business logic (`DuckCryptoService`, `OpenTakCryptoService`, `MbtilesService`, `MqttService`) |
+| `app/Services` | Core business logic (`DuckCryptoService`, `DuckPayloadDecoder`, `OpenTakCryptoService`, `MbtilesService`, `MqttService`) |
 | `database/migrations` | Relational database schema definitions |
 | `lang/` | Bilingual translation catalogs (`en`, `ms`) |
 | `resources/views` | Blade templates (Dashboard, Kiosk, Analytics, GPS, Status) |
@@ -398,13 +461,14 @@ php artisan test --filter=DashboardReadonlyTest
 | `docs/OFFLINE_MAPS.md` | Guide to creating and loading raster MBTiles |
 | `docs/TAK_BRIDGE.md` | Standalone TAK Cursor-on-Target (CoT) integration guide |
 | `docs/OPENTAK_BRIDGE.md` | OpenTAKServer encrypted plugin bridge (`ots-meshbeacon-bridge`) guide |
+| `docs/USE_CASES.md` | Disaster response scenarios and Kelantan flood case study |
 
 ---
 
 ## Security checklist
 
-- Maintain `APP_DEBUG=false` on all production and field nodes.
-- Protect `APP_KEY`, database secrets, MQTT credentials, and hybrid sync tokens.
+- Set `APP_DEBUG=false` on all production and field nodes.
+- Protect `APP_KEY`, database credentials, MQTT credentials, and hybrid sync tokens.
 - Back up `DUCK_CRYPTO_PRIVATE_KEY` and `DUCK_MESH_GROUP_KEY` securely.
 - Update the default administrator password immediately after installation.
 - Restrict Mosquitto network listeners or enable TLS and authentication on exposed networks.
@@ -423,7 +487,7 @@ Third-party dependencies retain their respective licenses. Livewire Flux Pro com
 
 ## Contributing
 
-Pull requests and issues are welcome! Please open an issue to discuss proposed features or bug fixes. Follow existing code conventions, keep PRs focused, include relevant tests, and branch from `Staging`.
+Pull requests and issues are welcome. Open an issue to discuss proposed features or bug fixes. Follow existing code conventions, keep PRs focused, include relevant tests, and branch from `Staging`.
 
 ### Contributors
 

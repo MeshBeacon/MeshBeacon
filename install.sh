@@ -130,7 +130,11 @@ clone_project() {
 prepare_environment() {
     cd "$install_dir"
 
-    [ -f .env ] || cp .env.example .env
+    fresh_env=0
+    if [ ! -f .env ]; then
+        cp .env.example .env
+        fresh_env=1
+    fi
 
     port=${MESHBEACON_PORT:-$(get_env_value MESHBEACON_PORT)}
     [ -n "$port" ] || port=8080
@@ -141,8 +145,12 @@ prepare_environment() {
     mqtt_bind_port=${MQTT_BIND_PORT:-$(get_env_value MQTT_BIND_PORT)}
     [ -n "$mqtt_bind_port" ] || mqtt_bind_port=1883
 
-    image_source=${MESHBEACON_IMAGE_SOURCE:-$(get_env_value MESHBEACON_IMAGE_SOURCE)}
-    [ -n "$image_source" ] || image_source=ghcr
+    if [ "$fresh_env" -eq 1 ]; then
+        image_source=${MESHBEACON_IMAGE_SOURCE:-ghcr}
+    else
+        image_source=${MESHBEACON_IMAGE_SOURCE:-$(get_env_value MESHBEACON_IMAGE_SOURCE)}
+        [ -n "$image_source" ] || image_source=ghcr
+    fi
 
     image=${MESHBEACON_IMAGE:-$(get_env_value MESHBEACON_IMAGE)}
     [ -n "$image" ] || image=meshbeacon:local
@@ -157,7 +165,7 @@ prepare_environment() {
         ghcr|pull)
             image_source=ghcr
             case "$image" in
-                meshbeacon:local)
+                meshbeacon:local|"")
                     image=$ghcr_image
                     ;;
             esac
@@ -308,7 +316,9 @@ install_freebsd() {
     log "Downloading the latest compiled MeshBeacon release"
     run_root mkdir -p "$install_dir"
     cd "$install_dir"
-    curl -fsSL https://github.com/MeshBeacon/meshbeacon/releases/latest/download/meshbeacon.tar.gz | run_root tar -xz --strip-components=1 -C "$install_dir"
+    if ! curl -fsSL https://github.com/MeshBeacon/meshbeacon/releases/latest/download/meshbeacon.tar.gz | run_root tar -xz --strip-components=1 -C "$install_dir"; then
+        die "Failed to download compiled release archive from GitHub Releases. Ensure a release tag with meshbeacon.tar.gz is published, or deploy with Docker on Linux."
+    fi
 
     prepare_environment
 
